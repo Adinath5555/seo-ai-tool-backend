@@ -1,18 +1,22 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
 import requests
 from bs4 import BeautifulSoup
 
 from database import engine, SessionLocal, Base
 from models import AuditReport
+from schemas import Website, UpdateReport
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 Base.metadata.create_all(bind=engine)
-
-
-class Website(BaseModel):
-    url: str
 
 
 @app.get("/")
@@ -115,6 +119,7 @@ def get_reports():
 
     return reports
 
+
 @app.get("/reports/{report_id}")
 def get_report(report_id: int):
 
@@ -123,5 +128,47 @@ def get_report(report_id: int):
     report = db.query(AuditReport).filter(
         AuditReport.id == report_id
     ).first()
+
+    return report
+
+@app.delete("/reports/{report_id}")
+def delete_report(report_id: int):
+
+    db = SessionLocal()
+
+    report = db.query(AuditReport).filter(
+        AuditReport.id == report_id
+    ).first()
+
+    if report is None:
+        return {"message": "Report not found"}
+
+    db.delete(report)
+
+    db.commit()
+
+    return {"message": "Report deleted successfully"}
+
+
+@app.put("/reports/{report_id}")
+def update_report(
+    report_id: int,
+    updated_data: UpdateReport
+):
+
+    db = SessionLocal()
+
+    report = db.query(AuditReport).filter(
+        AuditReport.id == report_id
+    ).first()
+
+    if report is None:
+        return {"message": "Report not found"}
+
+    report.seo_score = updated_data.seo_score
+
+    db.commit()
+
+    db.refresh(report)
 
     return report
