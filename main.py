@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 import requests
-from bs4 import BeautifulSoup
 
 from database import engine, SessionLocal, Base
 from models import AuditReport
 from schemas import Website, UpdateReport
+from services import audit_website_service
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -29,51 +29,31 @@ def audit_website(website: Website):
 
     db = SessionLocal()
 
-    response = requests.get(website.url, timeout=5)
+    try:
 
-    soup = BeautifulSoup(response.text, "html.parser")
+        result = audit_website_service(
+            website.url
+        )
 
-    title = soup.title.string if soup.title else "No title found"
+    except requests.exceptions.RequestException:
 
-    meta_description = soup.find(
-        "meta",
-        attrs={"name": "description"}
-    )
+        db.close()
 
-    meta_content = (
-        meta_description.get("content")
-        if meta_description
-        else "No meta description found"
-    )
+        return {
+            "error": "Website unreachable or invalid URL"
+        }
 
-    h1_tags = soup.find_all("h1")
+    title = result["title"]
 
-    h1_count = len(h1_tags)
+    meta_content = result["meta_description"]
 
-    images = soup.find_all("img")
+    h1_count = result["h1_count"]
 
-    total_images = len(images)
+    total_images = result["total_images"]
 
-    missing_alt_tags = 0
+    missing_alt_tags = result["missing_alt_tags"]
 
-    for image in images:
-
-        if not image.get("alt"):
-            missing_alt_tags += 1
-
-    seo_score = 0
-
-    if title != "No title found":
-        seo_score += 30
-
-    if meta_content != "No meta description found":
-        seo_score += 30
-
-    if h1_count > 0:
-        seo_score += 20
-
-    if missing_alt_tags == 0:
-        seo_score += 20
+    seo_score = result["seo_score"]
 
     new_report = AuditReport(
 
@@ -98,6 +78,8 @@ def audit_website(website: Website):
 
     db.refresh(new_report)
 
+    db.close()
+
     return {
         "id": new_report.id,
         "website": website.url,
@@ -109,13 +91,13 @@ def audit_website(website: Website):
         "seo_score": seo_score
     }
 
-
 @app.get("/reports")
 def get_reports():
 
     db = SessionLocal()
 
     reports = db.query(AuditReport).all()
+    db.close()
 
     return reports
 
@@ -126,9 +108,9 @@ def get_report(report_id: int):
     db = SessionLocal()
 
     report = db.query(AuditReport).filter(
-        AuditReport.id == report_id
+    AuditReport.id == report_id
     ).first()
-
+    db.close()
     return report
 
 @app.delete("/reports/{report_id}")
@@ -141,11 +123,13 @@ def delete_report(report_id: int):
     ).first()
 
     if report is None:
+        db.close()
         return {"message": "Report not found"}
 
     db.delete(report)
 
     db.commit()
+    db.close()
 
     return {"message": "Report deleted successfully"}
 
@@ -163,6 +147,7 @@ def update_report(
     ).first()
 
     if report is None:
+        db.close()
         return {"message": "Report not found"}
 
     report.seo_score = updated_data.seo_score
@@ -170,5 +155,6 @@ def update_report(
     db.commit()
 
     db.refresh(report)
+    db.close()
 
     return report

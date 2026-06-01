@@ -1,0 +1,14 @@
+# Backend
+
+D:\seo-ai-tool\myvenv\Scripts\Activate.ps1
+
+python -m uvicorn main:app --reload 
+
+
+
+# Frontend
+
+npm run dev
+
+
+
