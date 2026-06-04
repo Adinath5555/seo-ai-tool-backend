@@ -1,5 +1,17 @@
 import requests
 from bs4 import BeautifulSoup
+import os
+import google.generativeai as genai
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+genai.configure(
+    api_key=os.getenv("GEMINI_API_KEY")
+)
+
+model = genai.GenerativeModel("gemini-2.0-flash")
 
 
 def audit_website_service(url):
@@ -55,11 +67,40 @@ def audit_website_service(url):
     if missing_alt_tags == 0:
         seo_score += 20
 
+    prompt = f"""
+    Analyze this website SEO.
+
+    Title: {title}
+
+    Meta Description: {meta_content}
+
+    H1 Count: {h1_count}
+
+    Total Images: {total_images}
+
+    Missing Alt Tags: {missing_alt_tags}
+
+    Rule Based Score: {seo_score}
+
+    Give:
+    1. SEO Score out of 100
+    2. Strengths
+    3. Weaknesses
+    4. Suggestions
+    """
+
+    try:
+        ai_response = model.generate_content(prompt)
+        ai_feedback = ai_response.text
+    except Exception:
+        ai_feedback = "AI analysis temporarily unavailable. Please try again later."
+
     return {
         "title": title,
         "meta_description": meta_content,
         "h1_count": h1_count,
         "total_images": total_images,
         "missing_alt_tags": missing_alt_tags,
-        "seo_score": seo_score
+        "seo_score": seo_score,
+        "ai_feedback": ai_feedback
     }

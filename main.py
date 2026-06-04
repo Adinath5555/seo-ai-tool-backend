@@ -11,7 +11,10 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+    "http://localhost:5173",
+    "http://localhost:5174",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -55,6 +58,8 @@ def audit_website(website: Website):
 
     seo_score = result["seo_score"]
 
+    ai_feedback = result["ai_feedback"]
+
     new_report = AuditReport(
 
         website=website.url,
@@ -81,15 +86,16 @@ def audit_website(website: Website):
     db.close()
 
     return {
-        "id": new_report.id,
-        "website": website.url,
-        "title": title,
-        "meta_description": meta_content,
-        "h1_count": h1_count,
-        "total_images": total_images,
-        "missing_alt_tags": missing_alt_tags,
-        "seo_score": seo_score
-    }
+    "id": new_report.id,
+    "website": website.url,
+    "title": title,
+    "meta_description": meta_content,
+    "h1_count": h1_count,
+    "total_images": total_images,
+    "missing_alt_tags": missing_alt_tags,
+    "seo_score": seo_score,
+    "ai_feedback": ai_feedback
+}
 
 @app.get("/reports")
 def get_reports():
