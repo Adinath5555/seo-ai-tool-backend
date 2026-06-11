@@ -27,7 +27,15 @@ def audit_website_service(url):
         response.text,
         "html.parser"
     )
+    for tag in soup(["script", "style"]):
+        tag.decompose()
 
+    page_content = soup.get_text(
+    separator=" ",
+    strip=True
+    )
+
+    page_content = page_content[:2000]
     title = soup.title.string if soup.title else "No title found"
 
     meta_description = soup.find(
@@ -69,7 +77,7 @@ def audit_website_service(url):
 
     prompt = f"""
     Analyze this website SEO.
-
+    
     Title: {title}
 
     Meta Description: {meta_content}
@@ -82,6 +90,10 @@ def audit_website_service(url):
 
     Rule Based Score: {seo_score}
 
+    Webpage Content:
+
+    {page_content}
+
     Give:
     1. SEO Score out of 100
     2. Strengths
@@ -93,7 +105,7 @@ def audit_website_service(url):
         ai_response = model.generate_content(prompt)
         ai_feedback = ai_response.text
     except Exception:
-        ai_feedback = "AI analysis temporarily unavailable. Please try again later."
+    ai_feedback = "AI analysis temporarily unavailable. Please try again later."
 
     return {
         "title": title,
