@@ -105,7 +105,7 @@ def audit_website_service(url):
         ai_response = model.generate_content(prompt)
         ai_feedback = ai_response.text
     except Exception:
-    ai_feedback = "AI analysis temporarily unavailable. Please try again later."
+        ai_feedback = "AI analysis temporarily unavailable. Please try again later."
 
     return {
         "title": title,
