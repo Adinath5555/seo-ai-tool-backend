@@ -1,10 +1,11 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from motor.motor_asyncio import AsyncIOMotorClient
+from dotenv import load_dotenv
+import os
 
-DATABASE_URL = "sqlite:///./seo_tool.db"
+load_dotenv()
 
-engine = create_engine(DATABASE_URL)
+client = AsyncIOMotorClient(os.getenv("MONGODB_URI"))
 
-SessionLocal = sessionmaker(bind=engine)
+db = client["seo_ai_tool"]
 
-Base = declarative_base()
+reports_collection = db["audit_reports"]

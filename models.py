@@ -1,23 +1,11 @@
-from sqlalchemy import Column, Integer, String
-from database import Base
+from pydantic import BaseModel
 
 
-class AuditReport(Base):
-
-    __tablename__ = "audit_reports"
-
-    id = Column(Integer, primary_key=True, index=True)
-
-    website = Column(String)
-
-    title = Column(String)
-
-    meta_description = Column(String)
-
-    h1_count = Column(Integer)
-
-    total_images = Column(Integer)
-
-    missing_alt_tags = Column(Integer)
-
-    seo_score = Column(Integer)
+class AuditReport(BaseModel):
+    website: str
+    title: str
+    meta_description: str
+    h1_count: int
+    total_images: int
+    missing_alt_tags: int
+    seo_score: int
